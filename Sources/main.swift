@@ -223,7 +223,8 @@ final class Engine {
         resetWord()
 
         if check, let alt = other(than: cur),
-           keys.count >= 3 ? shouldConvertWord(keys, from: cur, to: alt) : shouldConvertShort(keys, from: cur, to: alt) {
+           customDecision(keys, from: cur, to: alt)
+            ?? (keys.count >= 3 ? shouldConvertWord(keys, from: cur, to: alt) : shouldConvertShort(keys, from: cur, to: alt)) {
             replace(deleting: keys.count, with: alt.translate(keys) + " ", switchTo: alt)
             lastWord = keys
             lastWordAuto = true
@@ -276,6 +277,72 @@ final class Engine {
         } else {
             select(alt)
         }
+    }
+
+    // MARK: Custom words (words.txt)
+
+    lazy var wordsURL: URL = {
+        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("LayoutSwitcher")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("words.txt")
+    }()
+    private var customCache: Set<String> = []
+    private var customDate: Date?
+
+    static let defaultWordsFile = """
+    # Мої слова — по одному в рядку, будь-якою мовою.
+    # Якщо набрати таке слово не в тій розкладці, програма його виправить.
+    # І навпаки: слово з цього списку ніколи не буде «виправлене».
+    # Зміни підхоплюються одразу після збереження файлу.
+
+    wp
+    wpb
+    woodmart
+    xtemos
+    wordpress
+    woocommerce
+    elementor
+    gutenberg
+    css
+    js
+    php
+    html
+    json
+    api
+    url
+    seo
+    git
+    github
+    figma
+    jira
+    slack
+
+    """
+
+    var customWords: Set<String> {
+        let fm = FileManager.default
+        if !fm.fileExists(atPath: wordsURL.path) {
+            try? Engine.defaultWordsFile.write(to: wordsURL, atomically: true, encoding: .utf8)
+        }
+        let date = (try? fm.attributesOfItem(atPath: wordsURL.path))?[.modificationDate] as? Date
+        if date != customDate {
+            customDate = date
+            let text = (try? String(contentsOf: wordsURL, encoding: .utf8)) ?? ""
+            customCache = Set(text.split(whereSeparator: \.isNewline)
+                .map { $0.trimmingCharacters(in: .whitespaces).lowercased() }
+                .filter { !$0.isEmpty && !$0.hasPrefix("#") })
+        }
+        return customCache
+    }
+
+    // true = convert, false = never convert, nil = no opinion.
+    func customDecision(_ keys: [Key], from cur: Layout, to alt: Layout) -> Bool? {
+        let a = cur.translate(keys).lowercased(), b = alt.translate(keys).lowercased()
+        let words = customWords
+        if words.contains(a) { return false }
+        if words.contains(b) { return !ignored.contains(a) }
+        return nil
     }
 
     // Remember a word the user didn't want converted.
@@ -364,6 +431,9 @@ final class Engine {
 
     func shouldConvertPrefix(_ keys: [Key], from cur: Layout, to alt: Layout) -> Bool {
         let a = cur.translate(keys), b = alt.translate(keys)
+        // Typed text may still become one of the user's words — wait for the space.
+        let lower = a.lowercased()
+        if customWords.contains(where: { $0.hasPrefix(lower) }) { return false }
         guard plausible(a, b) else { return false }
         return !hasPrefix(a, cur.lang) && hasPrefix(b, alt.lang)
     }
@@ -511,6 +581,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let hint = NSMenuItem(title: "Подвійний Shift — перекласти останнє слово", action: nil, keyEquivalent: "")
         hint.isEnabled = false
         menu.addItem(hint)
+        menu.addItem(item("Мої слова…", #selector(openWords)))
         let count = engine.ignored.count
         let clear = item("Очистити список винятків (\(count))", #selector(clearIgnored))
         clear.isEnabled = count > 0
@@ -540,6 +611,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if ex.contains(app) { ex.remove(app) } else { ex.insert(app) }
         engine.excluded = ex
         engine.resetAll()
+    }
+
+    @objc func openWords() {
+        _ = engine.customWords // creates the file on first use
+        NSWorkspace.shared.open(engine.wordsURL)
     }
 
     @objc func clearIgnored() {
@@ -592,8 +668,9 @@ func selfTest(_ words: [String]) {
             }
             let keys = word.compactMap { map[$0] }
             guard keys.count == word.count, let alt = engine.other(than: cur) else { continue }
-            let w = keys.count >= 3 ? engine.shouldConvertWord(keys, from: cur, to: alt)
-                                    : engine.shouldConvertShort(keys, from: cur, to: alt)
+            let w = engine.customDecision(keys, from: cur, to: alt)
+                ?? (keys.count >= 3 ? engine.shouldConvertWord(keys, from: cur, to: alt)
+                                    : engine.shouldConvertShort(keys, from: cur, to: alt))
             let p = keys.count >= 4 ? engine.shouldConvertPrefix(Array(keys.prefix(4)), from: cur, to: alt) : false
             result = "\(word) → \(alt.translate(keys))  word:\(w ? "CONVERT" : "keep")  prefix4:\(p ? "CONVERT" : "keep")"
             break

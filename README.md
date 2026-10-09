@@ -9,6 +9,7 @@ A tiny macOS menu bar app that automatically fixes text typed in the wrong keybo
 - Watches the word you're typing. After 4 letters (or on space for shorter words) it compares the word in both layouts using the macOS built-in spell checker.
 - If what you typed isn't a word, but the other layout gives a real word (or a pronounceable name), it erases the text, types the correct version and switches the layout.
 - Short words (що, це, на, та, не, в, у, …) are checked against a built-in list.
+- **Your own words**: work terms like `wpb`, `woodmart`, `elementor` live in an editable list (menu → **Мої слова…**, i.e. `~/Library/Application Support/LayoutSwitcher/words.txt`). Words from it are always fixed when typed in the wrong layout and never "fixed" otherwise. Changes apply right after saving, no restart needed.
 - **Double Shift** converts the current or last typed word to the other layout. If a word was converted by mistake, double Shift undoes it, and the app remembers the word so it won't touch it again.
 - Disabled in terminals and code editors (Terminal, iTerm, Warp, VS Code, Cursor, JetBrains IDEs). You can disable it for any other app from the menu.
 - Works fully offline and sends nothing anywhere.
@@ -58,6 +59,7 @@ If the icon menu still says "Немає дозволів" (no permissions), whic
 
 - **Автоперемикання** (auto-switching): turn automatic correction on/off. Double Shift always works.
 - **Вимкнути в «…»** (disable in …): don't touch text in the current app.
+- **Мої слова…** (my words): open your custom word list.
 - **Очистити список винятків** (clear exceptions): forget the words you've undone with double Shift.
 - **Запускати при вході** (launch at login): start the app together with your Mac.
 
