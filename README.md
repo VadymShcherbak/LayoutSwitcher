@@ -1,31 +1,31 @@
 # LayoutSwitcher
 
-Маленька програма для macOS, яка сама виправляє текст, набраний не в тій розкладці, і перемикає мову (англійська ↔ українська).
+A tiny macOS menu bar app that automatically fixes text typed in the wrong keyboard layout and switches the layout for you (English ↔ Ukrainian).
 
 `ghbdsn` → **привіт** · `руддщ` → **hello** · `oj wt yf` → **що це на** · `мфвнь` → **vadym**
 
-## Як працює
+## How it works
 
-- Слідкує за словом, яке ти набираєш. Після 4 літер, а для коротших слів на пробілі, порівнює його в обох розкладках через вбудований у macOS перевіряльник правопису.
-- Якщо набране не є словом, а в іншій розкладці виходить справжнє слово (або «вимовне» ім'я), програма стирає набране, вводить правильний варіант і перемикає мову.
-- Короткі слова (що, це, на, та, не, в, у, …) перевіряються за окремим списком.
-- **Подвійний Shift** перекладає поточне або щойно набране слово в іншу розкладку. Якщо програма виправила слово помилково, подвійний Shift його скасовує, і програма запам'ятовує це слово, щоб більше не чіпати.
-- У терміналах і редакторах коду (Terminal, iTerm, Warp, VS Code, Cursor, JetBrains) програма вимкнена. Будь-яку іншу програму можна вимкнути через меню.
-- Нічого не надсилає в інтернет і працює повністю локально.
+- Watches the word you're typing. After 4 letters (or on space for shorter words) it compares the word in both layouts using the macOS built-in spell checker.
+- If what you typed isn't a word, but the other layout gives a real word (or a pronounceable name), it erases the text, types the correct version and switches the layout.
+- Short words (що, це, на, та, не, в, у, …) are checked against a built-in list.
+- **Double Shift** converts the current or last typed word to the other layout. If a word was converted by mistake, double Shift undoes it, and the app remembers the word so it won't touch it again.
+- Disabled in terminals and code editors (Terminal, iTerm, Warp, VS Code, Cursor, JetBrains IDEs). You can disable it for any other app from the menu.
+- Works fully offline and sends nothing anywhere.
 
-Потрібні розкладки: англійська (ABC / U.S.) та українська (будь-яка). macOS 13+.
+Requires an English layout (ABC / U.S. / British) and any Ukrainian layout. macOS 13+.
 
-## Встановлення
+## Installation
 
-### Варіант 1: зібрати самому (рекомендовано)
+### Option 1: build from source (recommended)
 
-Потрібні Xcode Command Line Tools. Якщо їх ще немає:
+You need Xcode Command Line Tools. If you don't have them yet:
 
 ```bash
 xcode-select --install
 ```
 
-Далі:
+Then:
 
 ```bash
 git clone https://github.com/VadymShcherbak/LayoutSwitcher.git
@@ -33,41 +33,41 @@ cd LayoutSwitcher
 ./build.sh --install
 ```
 
-Програма встановиться в `~/Applications/LayoutSwitcher.app` і запуститься, а в menu bar з'явиться іконка клавіатури.
+The app is installed to `~/Applications/LayoutSwitcher.app` and launched, and a keyboard icon appears in the menu bar.
 
-### Варіант 2: готовий архів
+### Option 2: prebuilt archive
 
-Завантаж `LayoutSwitcher.zip` з розділу **Releases**, розпакуй і перенеси `LayoutSwitcher.app` в `~/Applications` або `/Applications`. Програма не підписана сертифікатом Apple, тому перед першим запуском виконай:
+Download `LayoutSwitcher.zip` from **Releases**, unzip it and move `LayoutSwitcher.app` to `~/Applications` or `/Applications`. The app isn't signed by Apple, so run this once before the first launch:
 
 ```bash
 xattr -dr com.apple.quarantine ~/Applications/LayoutSwitcher.app
 ```
 
-## Дозволи
+## Permissions
 
-macOS попросить два дозволи: **Системні параметри → Приватність і безпека**:
+macOS will ask for two permissions in **System Settings → Privacy & Security**:
 
-1. **Моніторинг вводу** (Input Monitoring)
-2. **Універсальний доступ** (Accessibility)
+1. **Input Monitoring**
+2. **Accessibility**
 
-Увімкни LayoutSwitcher в обох розділах. Якщо програми немає в списку, натисни «+» і вибери `LayoutSwitcher.app` (Cmd+Shift+G, щоб вставити шлях). Після цього **перезапусти програму**.
+Enable LayoutSwitcher in both. If the app isn't in the list, click "+" and select `LayoutSwitcher.app` (press Cmd+Shift+G to paste the path). Then **restart the app**.
 
-Якщо на іконці все одно написано «Немає дозволів» (так буває після оновлення або перезбірки), видали програму з обох списків кнопкою «−», додай її заново і перезапусти.
+If the icon menu still says "Немає дозволів" (no permissions), which can happen after an update or rebuild, remove the app from both lists with "−", add it again and restart it.
 
-## Меню
+## Menu
 
-- **Автоперемикання**: увімкнути або вимкнути автоматичне виправлення (подвійний Shift працює завжди).
-- **Вимкнути в «…»**: не чіпати текст у поточній програмі.
-- **Очистити список винятків**: забути слова, які ти скасовував подвійним Shift.
-- **Запускати при вході**: автозапуск разом з Маком.
+- **Автоперемикання** (auto-switching): turn automatic correction on/off. Double Shift always works.
+- **Вимкнути в «…»** (disable in …): don't touch text in the current app.
+- **Очистити список винятків** (clear exceptions): forget the words you've undone with double Shift.
+- **Запускати при вході** (launch at login): start the app together with your Mac.
 
-## Для розробки
+## Development
 
-Весь код в одному файлі: `Sources/main.swift`. Перевірити, як програма вирішить, чи конвертувати слово, можна без запуску в menu bar:
+All the code is in a single file: `Sources/main.swift`. You can check how the app decides whether to convert a word without running it in the menu bar:
 
 ```bash
 ./build.sh
 build/LayoutSwitcher.app/Contents/MacOS/LayoutSwitcher --test ghbdsn руддщ html
 ```
 
-`./build.sh --zip` збирає `build/LayoutSwitcher.zip` для Releases.
+`./build.sh --zip` builds `build/LayoutSwitcher.zip` for Releases.
